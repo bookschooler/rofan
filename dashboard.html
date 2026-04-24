@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>로판 시장 분석 대시보드</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', 'Apple SD Gothic Neo', sans-serif;
+      background: #f4f6f9;
+      color: #222;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%);
+      color: white;
+      padding: 36px 40px 28px;
+    }
+    header h1 { font-size: 1.8rem; font-weight: 700; margin-bottom: 6px; }
+    header p  { font-size: 0.95rem; opacity: 0.75; }
+
+    .kpi-bar {
+      display: flex;
+      gap: 16px;
+      padding: 20px 40px;
+      background: white;
+      border-bottom: 1px solid #e2e8f0;
+      flex-wrap: wrap;
+    }
+    .kpi {
+      flex: 1 1 160px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 14px 18px;
+    }
+    .kpi .label { font-size: 0.75rem; color: #64748b; margin-bottom: 4px; }
+    .kpi .value { font-size: 1.5rem; font-weight: 700; color: #1e293b; }
+    .kpi .sub   { font-size: 0.75rem; color: #94a3b8; margin-top: 2px; }
+    .kpi.highlight .value { color: #0f3460; }
+
+    nav {
+      display: flex;
+      gap: 0;
+      padding: 0 40px;
+      background: white;
+      border-bottom: 2px solid #e2e8f0;
+      overflow-x: auto;
+    }
+    nav button {
+      padding: 12px 20px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 0.88rem;
+      color: #64748b;
+      border-bottom: 3px solid transparent;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    nav button.active, nav button:hover {
+      color: #0f3460;
+      border-bottom-color: #0f3460;
+      font-weight: 600;
+    }
+
+    .content { padding: 32px 40px; max-width: 1400px; margin: 0 auto; }
+
+    .section { display: none; }
+    .section.active { display: block; }
+
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 6px;
+    }
+    .section-desc {
+      font-size: 0.85rem;
+      color: #64748b;
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+
+    .chart-grid {
+      display: grid;
+      gap: 20px;
+    }
+    .chart-grid.cols-1 { grid-template-columns: 1fr; }
+    .chart-grid.cols-2 { grid-template-columns: repeat(auto-fit, minmax(560px, 1fr)); }
+    .chart-grid.cols-3 { grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); }
+
+    .chart-card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+      overflow: hidden;
+    }
+    .chart-card .card-header {
+      padding: 14px 18px 10px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .chart-card .card-title { font-size: 0.9rem; font-weight: 600; color: #1e293b; }
+    .chart-card .card-sub   { font-size: 0.78rem; color: #94a3b8; margin-top: 2px; }
+    .chart-card img {
+      width: 100%;
+      display: block;
+    }
+
+    .insight-box {
+      background: #eff6ff;
+      border-left: 4px solid #3b82f6;
+      border-radius: 0 8px 8px 0;
+      padding: 14px 18px;
+      margin-bottom: 20px;
+      font-size: 0.88rem;
+      line-height: 1.7;
+      color: #1e3a5f;
+    }
+    .insight-box strong { color: #1d4ed8; }
+
+    .table-wrap { overflow-x: auto; margin-bottom: 20px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    }
+    th {
+      background: #1e293b;
+      color: white;
+      padding: 10px 14px;
+      text-align: left;
+      font-weight: 600;
+    }
+    td { padding: 9px 14px; border-bottom: 1px solid #f1f5f9; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #f8fafc; }
+    .sig { color: #16a34a; font-weight: 700; }
+    .ns  { color: #94a3b8; }
+
+    footer {
+      text-align: center;
+      padding: 24px;
+      font-size: 0.78rem;
+      color: #94a3b8;
+      border-top: 1px solid #e2e8f0;
+      margin-top: 40px;
+    }
+
+    @media (max-width: 700px) {
+      header, .kpi-bar, nav, .content { padding-left: 16px; padding-right: 16px; }
+      .chart-grid.cols-2, .chart-grid.cols-3 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>로판(로맨스판타지) 시장 분석 대시보드</h1>
+  <p>분석 기간: 2013-01 ~ 2026-03 &nbsp;|&nbsp; 데이터: 3개 플랫폼 연재작 16,337개 &nbsp;|&nbsp; 분석: STL · PELT · ITS · Prophet</p>
+</header>
+
+<!-- KPI -->
+<div class="kpi-bar">
+  <div class="kpi highlight">
+    <div class="label">추산 시장 규모 (2024)</div>
+    <div class="value">~5,059억</div>
+    <div class="sub">전자출판 1.6조 × 로판 31.7%</div>
+  </div>
+  <div class="kpi">
+    <div class="label">월 신작 수 최고점</div>
+    <div class="value">257편</div>
+    <div class="sub">2023-12월</div>
+  </div>
+  <div class="kpi">
+    <div class="label">10년 성장 배수</div>
+    <div class="value">×195</div>
+    <div class="sub">2013년 13편 → 2023년 257편</div>
+  </div>
+  <div class="kpi">
+    <div class="label">재혼황후 효과 (ITS)</div>
+    <div class="value">+32편</div>
+    <div class="sub">레벨 점프 p&lt;0.0001 ★</div>
+  </div>
+  <div class="kpi">
+    <div class="label">현재 감속 속도 (ITS)</div>
+    <div class="value">-3.3편/월</div>
+    <div class="sub">2024-04 이후 p&lt;0.0001 ★</div>
+  </div>
+  <div class="kpi">
+    <div class="label">2026-12 예측 (Prophet)</div>
+    <div class="value">228편</div>
+    <div class="sub">95% 구간: 197~262편</div>
+  </div>
+</div>
+
+<!-- 탭 네비게이션 -->
+<nav>
+  <button class="active" onclick="showTab('overview')">📊 시장 개요</button>
+  <button onclick="showTab('stl')">🔬 STL 분해</button>
+  <button onclick="showTab('pelt')">📍 변동점</button>
+  <button onclick="showTab('its')">🧪 ITS 인과분석</button>
+  <button onclick="showTab('platform')">🏢 플랫폼별 ITS</button>
+  <button onclick="showTab('prophet')">🔮 Prophet 예측</button>
+  <button onclick="showTab('summary')">💡 결론 & 시사점</button>
+</nav>
+
+<div class="content">
+
+  <!-- 시장 개요 -->
+  <div id="overview" class="section active">
+    <div class="section-title">시장 개요 — 로판은 어디까지 왔나?</div>
+    <div class="section-desc">
+      2013년 월 13편에서 시작해 2023년 257편으로 10년 만에 195배 성장. 현재는 성숙기 진입 신호가 감지되나 절대 수준은 높게 유지 중.
+    </div>
+    <div class="insight-box">
+      <strong>로판 생애 주기 요약:</strong> 도입기(~2017) → 성장기 진입(2017-09, PELT CP1 +275%) → 성장 가속(2019-10, 재혼황후 +32편) → 2차 가속(2020-08, PELT CP2 +86%) → 3차 가속(2022-07, PELT CP3 +37%) → 정점(2023) → <strong>성숙기 진입(2024-04~)</strong>
+    </div>
+    <div class="chart-grid cols-1">
+      <div class="chart-card">
+        <div class="card-header">
+          <div class="card-title">플랫폼별 월별 신작 수 (2013~2026)</div>
+          <div class="card-sub">카카오페이지 · 네이버시리즈 · 네이버웹툰 분리 집계</div>
+        </div>
+        <img src="charts/02_01_platform_monthly.png" alt="플랫폼별 월별 신작 수" />
+      </div>
+    </div>
+  </div>
+
+  <!-- STL 분해 -->
+  <div id="stl" class="section">
+    <div class="section-title">STL 분해 — 추세 / 계절성 / 잔차 분리</div>
+    <div class="section-desc">
+      STL(Seasonal-Trend-Loess)로 시계열을 3개 성분으로 분해. 2013년 초반 결측 8개월 선형 보간 후 재실행. 추세 기울기 +1.62편/월(연간 +19.4편), R²=0.9466.
+    </div>
+    <div class="insight-box">
+      <strong>계절성 패턴:</strong> 7월(+9.2편), 12월(+5.0편) 성수기 / 10월(-11.2편), 3월(-5.5편) 비수기 &nbsp;|&nbsp;
+      <strong>잔차 이상치:</strong> 2019-07(+48.2편, 4.4σ), 2021-09(-32.0편) 등 특정 달에 예상과 크게 다른 신작 수
+    </div>
+    <div class="chart-grid cols-1">
+      <div class="chart-card">
+        <div class="card-header">
+          <div class="card-title">STL 분해: 원본 · 추세 · 계절성 · 잔차</div>
+          <div class="card-sub">period=12, robust=True</div>
+        </div>
+        <img src="charts/02_02_stl_decomposition.png" alt="STL 분해" />
+      </div>
+    </div>
+  </div>
+
+  <!-- PELT 변동점 -->
+  <div id="pelt" class="section">
+    <div class="section-title">PELT 변동점 — 언제 시장이 구조적으로 바뀌었나?</div>
+    <div class="section-desc">
+      PELT(Pruned Exact Linear Time) 알고리즘으로 신작 수의 구조적 변동점 자동 탐지. penalty 1~99 Elbow Method 자동 탐색 → penalty=7 선택, 3개 변동점 탐지.
+    </div>
+    <div class="insight-box">
+      <strong>CP1 (2017-09):</strong> 20.9편 → 78.4편 (+275%) &nbsp;|&nbsp;
+      <strong>CP2 (2020-08):</strong> 78.4편 → 146.0편 (+86%) &nbsp;|&nbsp;
+      <strong>CP3 (2022-07):</strong> 146.0편 → 200.5편 (+37%)<br/>
+      세 변동점 모두 알려진 이벤트(재혼황후 2019-10, 선재업고튀어 2024-04)보다 <strong>먼저</strong> 발생 → 플랫폼 인프라·작가 풀이 선행, 이벤트가 가시화
+    </div>
+    <div class="chart-grid cols-2">
+      <div class="chart-card">
+        <div class="card-header">
+          <div class="card-title">Elbow Method — penalty vs 변동점 수</div>
+          <div class="card-sub">penalty=7에서 3개 변동점 (자동 선택)</div>
+        </div>
+        <img src="charts/02_03_pelt_elbow.png" alt="PELT Elbow" />
+      </div>
+      <div class="chart-card">
+        <div class="card-header">
+          <div class="card-title">PELT 변동점 탐지 (전체 + 2017 이후 확대)</div>
+          <div class="card-sub">주황 점선: 변동점 / 보라 점선: 알려진 이벤트</div>
+        </div>
+        <img src="charts/02_03_changepoints.png" alt="PELT 변동점" />
+      </div>
+    </div>
+  </div>
+
+  <!-- ITS 인과분석 -->
+  <div id="its" class="section">
+    <div class="section-title">ITS 인과분석 — 이벤트가 실제로 영향을 줬나?</div>
+    <div class="section-desc">
+      Interrupted Time Series: Y = β0 + β1×time + β2×intervention + β3×time_since<br/>
+      β2: 이벤트 직후 레벨(수준) 변화 / β3: 이벤트 이후 기울기(성장률) 변화
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>이벤트</th><th>β2 (레벨 변화)</th><th>p값</th><th>β3 (기울기 변화)</th><th>p값</th><th>R²</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>E001 재혼황후 웹툰 (2019-10)</td>
+            <td>+32.1편</td><td class="sig">0.0000 ★</td>
+            <td>+0.12편/월</td><td class="ns">0.456</td>
+            <td>0.921</td>
+          </tr>
+          <tr>
+            <td>E003 선재업고튀어 드라마 (2024-04)</td>
+            <td>+6.3편</td><td class="ns">0.475</td>
+            <td>-3.33편/월</td><td class="sig">0.0000 ★</td>
+            <td>0.940</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="chart-grid cols-2">
+      <div class="chart-card">
+        <div class="card-header">
+          <div class="card-title">ITS: 재혼황후 웹툰 연재 시작 (2019-10)</div>
+          <div class="card-sub">레벨 변화 +32편 ★ / 기울기 변화 비유의</div>
+        </div>
+        <img src="charts/03_01_its_E001.png" alt="ITS E001" />
+      </div>
+      <div class="chart-card">
+        <div class="card-header">
+          <div class="card-title">ITS: 선재업고튀어 드라마 방영 (2024-04)</div>
+          <div class="card-sub">레벨 변화 비유의 / 기울기 변화 -3.33편/월 ★</div>
+        </div>
+        <img src="charts/03_01_its_E003.png" alt="ITS E003" />
+      </div>
+    </div>
+  </div>
+
+  <!-- 플랫폼별 ITS -->
+  <div id="platform" class="section">
+    <div class="section-title">플랫폼별 ITS — 어느 플랫폼에서 효과가 컸나?</div>
+    <div class="section-desc">
+      3개 플랫폼 × 2개 이벤트 = 6개 ITS 회귀 분석. 재혼황후 효과는 네이버시리즈 중심(전체 +32편 중 75%). 2024년 이후 소설↓ 웹툰↑ 구조 변화 감지.
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>이벤트</th><th>플랫폼</th><th>β2 (레벨)</th><th>p값</th><th>β3 (기울기)</th><th>p값</th></tr>
+        </thead>
+        <tbody>
+          <tr><td rowspan="3">E001 재혼황후</td><td>카카오페이지</td><td>+8.2편</td><td class="sig">0.015 ★</td><td>-0.34편/월</td><td class="sig">0.000 ★</td></tr>
+          <tr><td>네이버시리즈</td><td>+24.0편</td><td class="sig">0.000 ★</td><td>+0.38편/월</td><td class="sig">0.001 ★</td></tr>
+          <tr><td>네이버웹툰</td><td>-0.1편</td><td class="ns">0.802</td><td>+0.08편/월</td><td class="sig">0.000 ★</td></tr>
+          <tr><td rowspan="3">E003 선재업고튀어</td><td>카카오페이지</td><td>-2.0편</td><td class="ns">0.611</td><td>-1.49편/월</td><td class="sig">0.000 ★</td></tr>
+          <tr><td>네이버시리즈</td><td>+5.7편</td><td class="ns">0.424</td><td>-1.77편/월</td><td class="sig">0.000 ★</td></tr>
+          <tr><td>네이버웹툰</td><td>+2.6편</td><td class="sig">0.001 ★</td><td>-0.08편/월</td><td class="ns">0.108</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="chart-grid cols-2">
+      <div class="chart-card">
+        <div class="card-header"><div class="card-title">카카오페이지 × E001</div></div>
+        <img src="charts/03_02_its_kakaopage_E001.png" alt="카카오페이지 E001" />
+      </div>
+      <div class="chart-card">
+        <div class="card-header"><div class="card-title">네이버시리즈 × E001</div></div>
+        <img src="charts/03_02_its_naver_series_E001.png" alt="네이버시리즈 E001" />
+      </div>
+      <div class="chart-card">
+        <div class="card-header"><div class="card-title">네이버웹툰 × E001</div></div>
+        <img src="charts/03_02_its_naver_webtoon_E001.png" alt="네이버웹툰 E001" />
+      </div>
+      <div class="chart-card">
+        <div class="card-header"><div class="card-title">카카오페이지 × E003</div></div>
+        <img src="charts/03_02_its_kakaopage_E003.png" alt="카카오페이지 E003" />
+      </div>
+      <div class="chart-card">
+        <div class="card-header"><div class="card-title">네이버시리즈 × E003</div></div>
+        <img src="charts/03_02_its_naver_series_E003.png" alt="네이버시리즈 E003" />
+      </div>
+      <div class="chart-card">
+        <div class="card-header"><div class="card-title">네이버웹툰 × E003</div></div>
+        <img src="charts/03_02_its_naver_webtoon_E003.png" alt="네이버웹툰 E003" />
+      </div>
+    </div>
+  </div>
+
+  <!-- Prophet 예측 -->
+  <div id="prophet" class="section">
+    <div class="section-title">Prophet 예측 — 2026년 하반기 신작 수는?</div>
+    <div class="section-desc">
+      PELT 변동점(2017-09, 2020-08, 2022-07)을 Prophet에 주입해 2026-04~12 예측. ITS 단기 감속과 달리 Prophet은 10년 전체 추세를 반영해 현 수준 유지 예측.
+    </div>
+    <div class="insight-box">
+      <strong>ITS vs Prophet:</strong> ITS는 2024년 이후 단기 감속(-3.33편/월) 포착 / Prophet은 10년 누적 상승 추세 반영 → 209~228편 유지 예측.<br/>
+      두 결과는 모순이 아님 — <strong>성장 속도가 꺾이는 중이지만 절대 수준은 높게 유지</strong>되는 성숙기 특징.
+    </div>
+    <div class="chart-grid cols-1">
+      <div class="chart-card">
+        <div class="card-header">
+          <div class="card-title">Prophet 예측 (2026-04 ~ 2026-12)</div>
+          <div class="card-sub">주황 점선: 예측 / 주황 음영: 95% 구간</div>
+        </div>
+        <img src="charts/04_01_prophet_forecast.png" alt="Prophet 예측" />
+      </div>
+      <div class="chart-card">
+        <div class="card-header">
+          <div class="card-title">Prophet 컴포넌트 — 추세 & 계절성</div>
+          <div class="card-sub">추세 방향 + 월별 계절성 패턴</div>
+        </div>
+        <img src="charts/04_01_prophet_components.png" alt="Prophet 컴포넌트" />
+      </div>
+    </div>
+  </div>
+
+  <!-- 결론 -->
+  <div id="summary" class="section">
+    <div class="section-title">결론 & 시사점</div>
+    <div class="section-desc">Phase 2~4 분석을 종합한 핵심 메시지와 플랫폼·투자자 관점 제언.</div>
+
+    <div class="insight-box" style="border-color:#10b981; background:#ecfdf5; color:#064e3b;">
+      <strong>핵심 메시지 1.</strong> 로판은 성숙기 진입, 그러나 붕괴는 없다<br/>
+      신작 수 기준 성장 속도는 꺾였지만 월 200편 이상의 공급이 유지. 추산 시장 규모 약 5,059억 원(2024).
+    </div>
+    <div class="insight-box" style="border-color:#f59e0b; background:#fffbeb; color:#78350f;">
+      <strong>핵심 메시지 2.</strong> IP 파이프라인이 다음 성장 동력<br/>
+      소설 플랫폼 신작 감속 vs 네이버웹툰 레벨 상승의 엇갈림. 웹툰화·드라마화 IP 전환이 시장 가치 유지의 핵심.
+    </div>
+    <div class="insight-box" style="border-color:#8b5cf6; background:#f5f3ff; color:#3b0764;">
+      <strong>핵심 메시지 3.</strong> "레벨 업 이벤트" 패턴이 반복될 수 있다<br/>
+      2017-09 구조 변화(PELT CP1)가 재혼황후(2019-10)보다 약 25개월 먼저였듯, 플랫폼 인프라가 먼저 준비되고 메가 IP가 이를 가시화하는 패턴.
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>대상</th><th>제언</th></tr></thead>
+        <tbody>
+          <tr><td>플랫폼 MD</td><td>여름(7월)·연말(12월) 성수기 라인업 집중, IP 웹툰화 트랙 강화</td></tr>
+          <tr><td>콘텐츠 기획사</td><td>소설 신작 경쟁 심화 — 웹툰·드라마 전환 가능성 있는 IP 선별 집중</td></tr>
+          <tr><td>투자자</td><td>신작 수 감속을 시장 붕괴로 오해 금지. 성숙기 안정화 단계, IP 밸류체인 구조 작동 중</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p style="font-size:0.75rem; color:#94a3b8; margin-top:12px;">
+      ※ 시장 규모 추산: DESA Researcher 에이전트 수집 수치 (밸류파인더 리서치, 오픈서베이 — Tier 2). 정밀 추산 아닌 방향성 참고용.
+    </p>
+  </div>
+
+</div>
+
+<footer>
+  로판 시장 분석 대시보드 &nbsp;|&nbsp; 데이터: 카카오페이지 · 네이버시리즈 · 네이버웹툰 &nbsp;|&nbsp; 분석: STL · PELT · ITS · Prophet
+</footer>
+
+<script>
+  function showTab(id) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    event.target.classList.add('active');
+  }
+</script>
+</body>
+</html>

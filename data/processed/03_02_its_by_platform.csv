@@ -1,0 +1,7 @@
+﻿platform,platform_label,event_id,event_label,event_date,pre_n,post_n,beta2,beta3,p_beta2,p_beta3,sig_beta2,sig_beta3,r2,p_beta2_holm,p_beta3_holm,sig_beta2_holm,sig_beta3_holm
+kakaopage,카카오페이지,E001,재혼황후 웹툰 연재,2019-10,73,78,8.179,-0.3373,0.0146,0.0,True,True,0.8918,0.073,0.0,False,True
+kakaopage,카카오페이지,E003,선재업고튀어 드라마,2024-04,127,24,-1.985,-1.4863,0.6113,0.0,False,True,0.9238,1.0,0.0,False,True
+naver_series,네이버 시리즈,E001,재혼황후 웹툰 연재,2019-10,73,78,24.018,0.3761,0.0,0.0013,True,True,0.893,0.0,0.0078,True,True
+naver_series,네이버 시리즈,E003,선재업고튀어 드라마,2024-04,127,24,5.68,-1.766,0.4244,0.0002,False,True,0.8894,1.0,0.0016,False,True
+naver_webtoon,네이버 웹툰,E001,재혼황후 웹툰 연재,2019-10,73,78,-0.123,0.0838,0.8024,0.0,False,True,0.6576,1.0,0.0,False,True
+naver_webtoon,네이버 웹툰,E003,선재업고튀어 드라마,2024-04,127,24,2.568,-0.081,0.0011,0.1082,True,False,0.5678,0.0077,0.4328,True,False
