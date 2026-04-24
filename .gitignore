@@ -38,6 +38,14 @@ run_parallel_chunks.py
 # ── 대용량 바이너리 ──────────────────────────────────────
 *.pdf
 
+# ── 내부 작업 파일 (포트폴리오 제외) ─────────────────────
+CONTEXT.md
+OVERVIEW.md
+PLAN.md
+progress.md
+RESEARCH.md
+RESEARCH_TECH.md
+
 # ── OS 파일 ──────────────────────────────────────────────
 .DS_Store
 Thumbs.db
